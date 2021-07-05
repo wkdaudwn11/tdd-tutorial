@@ -49,26 +49,10 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const ref = "${{github.ref}}"
-            const pull_number = Number(ref.split("/")[2])
-            await github.pulls.createReview({
-              ...context.repo,
-              pull_number,
-              body: "Test failed!!!!!!!",
-              event: "REQUEST_CHANGES"
-            })
-        if: ${{ failure() && github.event_name == 'pull_request' }}
+            console.log("testing failed!!!!!")
       - name: review success testing
         uses: actions/github-script@v3.1.0
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const ref = "${{github.ref}}"
-            const pull_number = Number(ref.split("/")[2])
-            await github.pulls.createReview({
-              ...context.repo,
-              pull_number,
-              body: "Test passed!",
-              event: "APPROVE"
-            })
-        if: ${{ success() && github.event_name == 'pull_request' }}
+            console.log("testing passed!!!!!")
