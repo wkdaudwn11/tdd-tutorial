@@ -1,0 +1,74 @@
+# This is a basic workflow to help you get started with Actions
+
+name: E2E Testing
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the develop branch
+  pull_request:
+    branches: [main]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  test:
+    name: Run E2E Testing
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node_version: ["14"]
+        os: [ubuntu-latest]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: setup npm info
+        uses: actions/setup-node@v1
+        with:
+          always-auth: true
+          node-version: "14.x"
+          registry-url: https://registry.npmjs.org
+          scope: "@mj"
+      - name: package install
+        run: yarn
+      - name: Cypress run
+        uses: cypress-io/github-action@v2
+        with:
+          install: false
+          build: yarn build
+          start: yarn start
+          wait-on: "http://localhost:3000"
+          wait-on-timeout: 120
+          browser: chrome
+      - name: review fail testing
+        uses: actions/github-script@v3.1.0
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const ref = "${{github.ref}}"
+            const pull_number = Number(ref.split("/")[2])
+            await github.pulls.createReview({
+              ...context.repo,
+              pull_number,
+              body: "Test failed!!!!!!!",
+              event: "REQUEST_CHANGES"
+            })
+        if: ${{ failure() && github.event_name == 'pull_request' }}
+      - name: review success testing
+        uses: actions/github-script@v3.1.0
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const ref = "${{github.ref}}"
+            const pull_number = Number(ref.split("/")[2])
+            await github.pulls.createReview({
+              ...context.repo,
+              pull_number,
+              body: "Test passed!",
+              event: "APPROVE"
+            })
+        if: ${{ success() && github.event_name == 'pull_request' }}
