@@ -1,6 +1,7 @@
-/* eslint-disable jest/valid-expect, no-undef */
+/* eslint-disable jest/valid-expect, no-undef, jest/valid-expect-in-promise */
 
 import React from "react";
+import axios from "axios";
 import App, { doIncrement, doDecrement, Counter } from "./App";
 
 describe("Local State", () => {
@@ -57,5 +58,31 @@ describe("App Component", () => {
     wrapper.setState({ counter: 0 });
     wrapper.find("button").at(1).simulate("click");
     expect(wrapper.state().counter).to.equal(-1);
+  });
+});
+
+describe("Sinon - App Component", () => {
+  const result = [3, 5, 9];
+  const promise = Promise.resolve(result);
+
+  before(() => {
+    sinon
+      .stub(axios, "get")
+      .withArgs("http://mydomain/counter")
+      .returns(promise);
+  });
+
+  after(() => {
+    axios.get.restore();
+  });
+
+  it("비동기로 카운터를 가져온다", () => {
+    const wrapper = shallow(<App />);
+
+    expect(wrapper.state().asyncCounters).to.equal(null);
+
+    promise.then(() => {
+      expect(wrapper.state().asyncCounters).to.equal(result);
+    });
   });
 });
